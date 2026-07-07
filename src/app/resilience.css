@@ -1,0 +1,67 @@
+.resilience-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(215, 247, 255, 0.16), transparent 30rem),
+    linear-gradient(180deg, #080b10 0%, #030405 100%);
+  color: var(--zen-text, rgba(255, 255, 255, 0.94));
+  font-family: var(--font-label, system-ui, sans-serif);
+}
+
+.resilience-card {
+  width: min(36rem, 100%);
+  border: 1px solid var(--zen-line, rgba(255, 255, 255, 0.14));
+  border-radius: 1.5rem;
+  padding: clamp(1.2rem, 3vw, 2rem);
+  background: rgba(10, 12, 16, 0.82);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+}
+
+.resilience-card h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 3.3rem);
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+}
+
+.resilience-card p {
+  color: var(--zen-muted, rgba(255, 255, 255, 0.62));
+  line-height: 1.55;
+}
+
+.resilience-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
+.resilience-actions button,
+.resilience-actions a {
+  appearance: none;
+  border: 1px solid var(--zen-line, rgba(255, 255, 255, 0.14));
+  border-radius: 999px;
+  padding: 0.8rem 1rem;
+  color: var(--zen-text, rgba(255, 255, 255, 0.94));
+  background: rgba(255, 255, 255, 0.07);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.loading-pulse {
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid rgba(215, 247, 255, 0.28);
+  border-radius: 50%;
+  box-shadow: 0 0 42px rgba(215, 247, 255, 0.16), inset 0 0 28px rgba(215, 247, 255, 0.08);
+  animation: zenith-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes zenith-pulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.58; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
