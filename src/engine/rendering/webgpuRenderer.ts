@@ -10,44 +10,7 @@ export type RendererHandle = { mode: RenderMode; render: (frame: { physics: Phys
 type RendererOptions = { graphicsPreset: 'performance' | 'balanced' | 'zenith'; seed: string; weather: WeatherState };
 
 export async function createRenderer(canvas: HTMLCanvasElement, options: RendererOptions): Promise<RendererHandle> {
-  const webgpu = await tryCreateWebGpuRenderer(canvas, options).catch(() => null);
-  return webgpu ?? createCanvasRenderer(canvas, options);
-}
-
-async function tryCreateWebGpuRenderer(canvas: HTMLCanvasElement, _options: RendererOptions): Promise<RendererHandle | null> {
-  if (!navigator.gpu) return null;
-  const adapter = await navigator.gpu.requestAdapter();
-  if (!adapter) return null;
-  const device = await adapter.requestDevice();
-  const context = canvas.getContext('webgpu');
-  if (!context) return null;
-  const format = navigator.gpu.getPreferredCanvasFormat();
-  context.configure({ device, format, alphaMode: 'opaque' });
-  const shader = device.createShaderModule({
-    label: 'zenith-procedural-road',
-    code: `@vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f { var p = array<vec2f, 3>(vec2f(-1, -1), vec2f(3, -1), vec2f(-1, 3)); return vec4f(p[i], 0, 1); } @fragment fn fs() -> @location(0) vec4f { return vec4f(0.02, 0.035, 0.055, 1.0); }`
-  });
-  const pipeline = device.createRenderPipeline({ label: 'zenith-background-pipeline', layout: 'auto', vertex: { module: shader, entryPoint: 'vs' }, fragment: { module: shader, entryPoint: 'fs', targets: [{ format }] }, primitive: { topology: 'triangle-list' } });
-  let last = performance.now();
-  let fps = 0;
-  return {
-    mode: 'webgpu',
-    render() {
-      resizeCanvas(canvas);
-      const now = performance.now();
-      const frameTimeMs = now - last;
-      last = now;
-      fps = fps * 0.92 + (1000 / Math.max(1, frameTimeMs)) * 0.08;
-      const encoder = device.createCommandEncoder();
-      const pass = encoder.beginRenderPass({ colorAttachments: [{ view: context.getCurrentTexture().createView(), clearValue: { r: 0.02, g: 0.03, b: 0.045, a: 1 }, loadOp: 'clear', storeOp: 'store' }] });
-      pass.setPipeline(pipeline);
-      pass.draw(3);
-      pass.end();
-      device.queue.submit([encoder.finish()]);
-      return { fps, frameTimeMs, mode: 'webgpu', drawCalls: 1, approximateVramMb: 96 };
-    },
-    dispose() { device.destroy(); }
-  };
+  return createCanvasRenderer(canvas, options);
 }
 
 function createCanvasRenderer(canvas: HTMLCanvasElement, _options: RendererOptions): RendererHandle {
@@ -64,32 +27,85 @@ function createCanvasRenderer(canvas: HTMLCanvasElement, _options: RendererOptio
       fps = fps * 0.92 + (1000 / Math.max(1, frameTimeMs)) * 0.08;
       if (!ctx) return { fps, frameTimeMs, mode: 'canvas', drawCalls: 0, approximateVramMb: 24 };
       const { width, height } = canvas;
-      const sky = ctx.createLinearGradient(0, 0, 0, height);
-      sky.addColorStop(0, '#0a1720');
-      sky.addColorStop(1, '#050607');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, width, height);
+      drawSky(ctx, width, height, weather, physics.position.z);
+      drawTerrain(ctx, width, height, physics, seed);
       drawRoad(ctx, width, height, physics, input, seed);
+      drawCockpitHints(ctx, width, height, physics);
       drawWeather(ctx, width, height, weather, physics.position.z);
-      return { fps, frameTimeMs, mode: 'canvas', drawCalls: 3, approximateVramMb: 24 };
+      return { fps, frameTimeMs, mode: 'canvas', drawCalls: 5, approximateVramMb: 24 };
     },
     dispose() {}
   };
 }
 
-function drawRoad(ctx: CanvasRenderingContext2D, width: number, height: number, physics: PhysicsSnapshot, input: DriverInputState, seed: string) {
-  const segments = generateStreamingRoad(seed, physics.position.z, 4);
-  ctx.save();
-  ctx.translate(width / 2 - physics.position.x * 14 - input.steering * 36, height * 0.58);
-  ctx.fillStyle = '#171b20';
+function drawSky(ctx: CanvasRenderingContext2D, width: number, height: number, weather: WeatherState, z: number) {
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, weather === 'clear' ? '#0b2233' : '#111820');
+  sky.addColorStop(0.48, weather === 'snow' ? '#182532' : '#08121a');
+  sky.addColorStop(1, '#040506');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = '#d7f7ff';
   ctx.beginPath();
-  ctx.moveTo(-width * 0.07, -height * 0.02);
-  ctx.lineTo(width * 0.07, -height * 0.02);
-  ctx.lineTo(width * 0.33, height * 0.46);
-  ctx.lineTo(-width * 0.33, height * 0.46);
+  ctx.arc(width * 0.72 + Math.sin(z * 0.002) * 30, height * 0.18, Math.min(width, height) * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawTerrain(ctx: CanvasRenderingContext2D, width: number, height: number, physics: PhysicsSnapshot, seed: string) {
+  const segments = generateStreamingRoad(seed, physics.position.z, 8);
+  const horizon = height * 0.47;
+  ctx.fillStyle = physics.terrain === 'snow' ? '#17232b' : physics.terrain === 'mud' ? '#16100d' : physics.terrain === 'dirt' ? '#1b160f' : '#111b18';
+  ctx.fillRect(0, horizon, width, height - horizon);
+  ctx.strokeStyle = 'rgba(215,247,255,0.10)';
+  ctx.lineWidth = 1;
+  for (const segment of segments) {
+    const y = horizon + (segment.index * 80 - physics.position.z) * 0.11;
+    if (y < horizon - 20 || y > height + 40) continue;
+    ctx.beginPath();
+    ctx.moveTo(0, y + segment.elevation * 0.8);
+    ctx.lineTo(width, y + segment.elevation * 0.8 + segment.camber * 180);
+    ctx.stroke();
+  }
+}
+
+function drawRoad(ctx: CanvasRenderingContext2D, width: number, height: number, physics: PhysicsSnapshot, input: DriverInputState, seed: string) {
+  const segments = generateStreamingRoad(seed, physics.position.z, 5);
+  const horizon = height * 0.48;
+  ctx.save();
+  ctx.translate(width / 2 - physics.position.x * 14 - input.steering * 36, horizon);
+  const road = ctx.createLinearGradient(0, 0, 0, height * 0.52);
+  road.addColorStop(0, '#20252c');
+  road.addColorStop(1, '#090b0e');
+  ctx.fillStyle = road;
+  ctx.beginPath();
+  ctx.moveTo(-width * 0.08, 0);
+  ctx.lineTo(width * 0.08, 0);
+  ctx.lineTo(width * 0.36, height * 0.52);
+  ctx.lineTo(-width * 0.36, height * 0.52);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = 'rgba(215,247,255,.16)';
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.26)';
+  ctx.lineWidth = Math.max(2, width * 0.002);
+  ctx.beginPath();
+  ctx.moveTo(-width * 0.08, 0);
+  ctx.lineTo(-width * 0.36, height * 0.52);
+  ctx.moveTo(width * 0.08, 0);
+  ctx.lineTo(width * 0.36, height * 0.52);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(215,247,255,0.34)';
+  ctx.setLineDash([18, 22]);
+  ctx.lineWidth = Math.max(2, width * 0.0015);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, height * 0.52);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = 'rgba(215,247,255,0.16)';
   ctx.lineWidth = 2;
   for (const segment of segments) {
     for (let i = 0; i < segment.points.length; i += 18) {
@@ -102,6 +118,21 @@ function drawRoad(ctx: CanvasRenderingContext2D, width: number, height: number, 
       ctx.stroke();
     }
   }
+  ctx.restore();
+}
+
+function drawCockpitHints(ctx: CanvasRenderingContext2D, width: number, height: number, physics: PhysicsSnapshot) {
+  ctx.save();
+  ctx.globalAlpha = 0.62;
+  ctx.strokeStyle = 'rgba(215,247,255,0.22)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(width * 0.5, height * 0.86, Math.min(width, height) * 0.12, Math.PI * 1.08, Math.PI * 1.92);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(215,247,255,0.72)';
+  ctx.font = `${Math.max(12, Math.floor(width * 0.012))}px ui-monospace, monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${Math.round(physics.speedKph)} KM/H · G${physics.gear} · ${physics.terrain.toUpperCase()}`, width * 0.5, height * 0.9);
   ctx.restore();
 }
 
