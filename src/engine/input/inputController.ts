@@ -10,6 +10,10 @@ export type DriverInputState = {
   shiftDown: boolean;
 };
 
+export type MobileInputState = Partial<DriverInputState> & {
+  active?: boolean;
+};
+
 type Listener = (state: DriverInputState) => void;
 
 type InputController = {
@@ -31,9 +35,23 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return buffer;
 }
 
+function normalizeMobileInput(detail: MobileInputState): DriverInputState {
+  return {
+    throttle: clamp01(detail.throttle ?? 0),
+    brake: clamp01(detail.brake ?? 0),
+    clutch: clamp01(detail.clutch ?? 0),
+    steering: clampAxis(detail.steering ?? 0),
+    handbrake: clamp01(detail.handbrake ?? 0),
+    shiftUp: Boolean(detail.shiftUp),
+    shiftDown: Boolean(detail.shiftDown)
+  };
+}
+
 export function createInputController(listener: Listener): InputController {
   const keys = new Set<string>();
   let state = { ...initialState };
+  let mobileState = { ...initialState };
+  let mobileActive = false;
   let hidDevice: HIDDevice | null = null;
   let hidProfile: HidProfile | null = null;
   let animationFrame: number | null = null;
@@ -54,11 +72,27 @@ export function createInputController(listener: Listener): InputController {
     shiftDown: keys.has('KeyQ')
   });
 
-  const keyboardLoop = () => {
+  const mergedTarget = (): DriverInputState => {
+    const keyboard = keyboardTarget();
+    if (!mobileActive) return keyboard;
+    return {
+      throttle: Math.max(keyboard.throttle, mobileState.throttle),
+      brake: Math.max(keyboard.brake, mobileState.brake),
+      clutch: Math.max(keyboard.clutch, mobileState.clutch),
+      steering: Math.abs(mobileState.steering) > Math.abs(keyboard.steering) ? mobileState.steering : keyboard.steering,
+      handbrake: Math.max(keyboard.handbrake, mobileState.handbrake),
+      shiftUp: keyboard.shiftUp || mobileState.shiftUp,
+      shiftDown: keyboard.shiftDown || mobileState.shiftDown
+    };
+  };
+
+  const inputLoop = () => {
     if (disposed || hidDevice) return;
-    const target = keyboardTarget();
-    publish({ throttle: smoothAxis(state.throttle, target.throttle, 0.16), brake: smoothAxis(state.brake, target.brake, 0.22), clutch: smoothAxis(state.clutch, target.clutch, 0.24), steering: smoothAxis(state.steering, target.steering, target.steering === 0 ? 0.2 : 0.14), handbrake: target.handbrake, shiftUp: target.shiftUp, shiftDown: target.shiftDown });
-    animationFrame = window.requestAnimationFrame(keyboardLoop);
+    const target = mergedTarget();
+    publish({ throttle: smoothAxis(state.throttle, target.throttle, 0.18), brake: smoothAxis(state.brake, target.brake, 0.24), clutch: smoothAxis(state.clutch, target.clutch, 0.24), steering: smoothAxis(state.steering, target.steering, target.steering === 0 ? 0.24 : 0.18), handbrake: target.handbrake, shiftUp: target.shiftUp, shiftDown: target.shiftDown });
+    mobileState.shiftUp = false;
+    mobileState.shiftDown = false;
+    animationFrame = window.requestAnimationFrame(inputLoop);
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -66,10 +100,16 @@ export function createInputController(listener: Listener): InputController {
     keys.add(event.code);
   };
   const onKeyUp = (event: KeyboardEvent) => { keys.delete(event.code); };
+  const onMobileInput = (event: Event) => {
+    const detail = (event as CustomEvent<MobileInputState>).detail ?? {};
+    mobileActive = detail.active !== false;
+    mobileState = normalizeMobileInput(detail);
+  };
 
   window.addEventListener('keydown', onKeyDown, { passive: false });
   window.addEventListener('keyup', onKeyUp);
-  animationFrame = window.requestAnimationFrame(keyboardLoop);
+  window.addEventListener('aerodrive:mobile-input', onMobileInput as EventListener);
+  animationFrame = window.requestAnimationFrame(inputLoop);
 
   return {
     getState: () => state,
@@ -100,6 +140,7 @@ export function createInputController(listener: Listener): InputController {
       disposed = true;
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('aerodrive:mobile-input', onMobileInput as EventListener);
       if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
       void hidDevice?.close();
       hidDevice = null;
