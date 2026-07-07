@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 512 512" role="img" aria-label="AeroDrive Zenith">
+  <rect width="512" height="512" rx="112" fill="#07080a"/>
+  <path d="M98 354C152 198 205 120 256 120s104 78 158 234" fill="none" stroke="#d7f7ff" stroke-width="34" stroke-linecap="round"/>
+  <path d="M172 352h168" stroke="#ffffff" stroke-opacity=".42" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="28" fill="#d7f7ff"/>
+</svg>
