@@ -1,6 +1,6 @@
 {
   "name": "aerodrive-zenith",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": true,
   "description": "Vercel-ready offline-first browser-native driving simulator milestone for AeroDrive Zenith.",
   "scripts": {
@@ -10,8 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test:security": "node scripts/security-seed-tests.mjs",
     "test:offline": "node scripts/offline-cache-audit.mjs",
-    "check": "npm run typecheck && npm run test:security && npm run test:offline && npm run test:enterprise",
-    "test:enterprise": "node scripts/enterprise-audit.mjs"
+    "test:enterprise": "node scripts/enterprise-audit.mjs",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "check": "npm run typecheck && npm run test:security && npm run test:offline && npm run test:enterprise && npm run audit:prod"
   },
   "dependencies": {
     "next": "16.2.10",
