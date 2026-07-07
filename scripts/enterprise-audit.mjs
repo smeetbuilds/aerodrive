@@ -3,7 +3,8 @@ import { readFileSync, existsSync } from 'node:fs';
 const checks = [
   ['public/sw.js', ['CACHE_VERSION', 'networkFirstNavigation', 'trimCache', 'url.origin !== self.location.origin']],
   ['src/engine/storage/indexedDb.ts', ['validateSettings', 'lap-times', 'peripheral-mappings', 'estimateLocalStorage']],
-  ['src/engine/input/inputController.ts', ['connectHidDevice', 'applyForceFeedback', 'usagePage', 'toArrayBuffer']],
+  ['src/engine/input/inputController.ts', ['MobileInputState', 'aerodrive:mobile-input', 'connectHidDevice', 'applyForceFeedback', 'usagePage', 'toArrayBuffer']],
+  ['src/components/MobileControls.tsx', ['DeviceOrientationEvent', 'mobile-wheel-pad', 'Brake', 'Accelerate', 'Handbrake', 'Gear']],
   ['src/engine/input/hidProfiles.ts', ['buildForceFeedbackReport', 'resolveHidProfile', 'Logitech-style']],
   ['src/engine/physics/vehicleModel.ts', ['pacejkaMagicFormula', 'COM_H', 'weatherGripMultiplier', 'PHYSICS_TICK_HZ']],
   ['src/engine/physics/wasmPhysicsBridge.ts', ['loadWasmPhysicsCore', 'zenith_physics.wasm', 'pacejkaMagicFormula']],
