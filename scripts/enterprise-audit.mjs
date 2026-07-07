@@ -9,7 +9,7 @@ const checks = [
   ['src/engine/physics/wasmPhysicsBridge.ts', ['loadWasmPhysicsCore', 'zenith_physics.wasm', 'pacejkaMagicFormula']],
   ['public/wasm/zenith_physics.wasm', []],
   ['src/workers/physics.worker.ts', ['MAX_CATCHUP_TICKS', 'spiral of death', 'setTimeout', 'tickDriftMs']],
-  ['src/engine/rendering/webgpuRenderer.ts', ['navigator.gpu', 'createRenderPipeline', 'drawWeather', 'generateStreamingRoad']],
+  ['src/engine/rendering/webgpuRenderer.ts', ['createCanvasRenderer', 'drawRoad', 'drawCockpitHints', 'drawWeather', 'generateStreamingRoad']],
   ['src/engine/terrain/proceduralRoad.ts', ['MAX_SEGMENT_CACHE_ENTRIES', 'getRoadSegmentCacheSize', 'sampleSurface', 'lerp']],
   ['src/engine/audio/audioEngine.ts', ['panningModel = \'HRTF\'', 'makeNoiseBuffer', 'surfaceRoughness']],
   ['src/engine/performance/budget.ts', ['PERFORMANCE_BUDGET', 'classifyRuntimeHealth']],
