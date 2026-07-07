@@ -4,6 +4,8 @@ import type { PhysicsWorkerInbound, PhysicsWorkerOutbound } from '@/engine/physi
 import { loadWasmPhysicsCore, type PhysicsMathCore } from '@/engine/physics/wasmPhysicsBridge';
 import type { WeatherState } from '@/engine/weather/weatherMatrix';
 
+type WorkerScope = { postMessage: (message: PhysicsWorkerOutbound) => void; onmessage: ((event: MessageEvent<PhysicsWorkerInbound>) => void) | null };
+const workerScope = self as unknown as WorkerScope;
 const MAX_CATCHUP_TICKS = 8;
 const blankInput: DriverInputState = { throttle: 0, brake: 0, clutch: 0, steering: 0, handbrake: 0, shiftUp: false, shiftDown: false };
 
@@ -18,7 +20,7 @@ let startTime = lastTime;
 let mathCore: PhysicsMathCore | null = null;
 
 function post(message: PhysicsWorkerOutbound) {
-  self.postMessage(message);
+  workerScope.postMessage(message);
 }
 
 async function boot(nextSeed: string, nextWeather: WeatherState) {
@@ -56,7 +58,7 @@ function loop() {
   setTimeout(loop, 1000 / PHYSICS_TICK_HZ);
 }
 
-self.onmessage = (event: MessageEvent<PhysicsWorkerInbound>) => {
+workerScope.onmessage = (event: MessageEvent<PhysicsWorkerInbound>) => {
   const message = event.data;
   if (message.type === 'boot') void boot(message.seed, message.weather);
   if (message.type === 'input') input = message.input;
