@@ -2,7 +2,6 @@ const CACHE_VERSION = 'aerodrive-zenith-v0.3.5';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const CORE_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.webmanifest',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -65,7 +64,7 @@ async function networkFirstNavigation(request) {
     if (response.ok) await cache.put('/', response.clone());
     return response;
   } catch (_error) {
-    const cached = await cache.match(request) || await cache.match('/') || await cache.match('/index.html') || await caches.match('/');
+    const cached = await cache.match(request) || await cache.match('/') || await caches.match('/');
     return cached || new Response('AeroDrive Zenith is not cached yet. Load once while online.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
