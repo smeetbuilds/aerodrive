@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { MobileControls } from '@/components/MobileControls';
 import './styles.css';
 import './resilience.css';
 
@@ -24,7 +25,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <MobileControls />
+      </body>
     </html>
   );
 }
