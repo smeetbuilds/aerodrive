@@ -19,27 +19,11 @@ type InputController = {
   dispose: () => void;
 };
 
-const initialState: DriverInputState = {
-  throttle: 0,
-  brake: 0,
-  clutch: 0,
-  steering: 0,
-  handbrake: 0,
-  shiftUp: false,
-  shiftDown: false
-};
+const initialState: DriverInputState = { throttle: 0, brake: 0, clutch: 0, steering: 0, handbrake: 0, shiftUp: false, shiftDown: false };
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function clampAxis(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
-
-function smoothAxis(current: number, target: number, speed: number): number {
-  return current + (target - current) * speed;
-}
+function clamp01(value: number): number { return Math.max(0, Math.min(1, value)); }
+function clampAxis(value: number): number { return Math.max(-1, Math.min(1, value)); }
+function smoothAxis(current: number, target: number, speed: number): number { return current + (target - current) * speed; }
 
 export function createInputController(listener: Listener): InputController {
   const keys = new Set<string>();
@@ -50,15 +34,7 @@ export function createInputController(listener: Listener): InputController {
   let disposed = false;
 
   const publish = (next: DriverInputState) => {
-    state = {
-      throttle: clamp01(next.throttle),
-      brake: clamp01(next.brake),
-      clutch: clamp01(next.clutch),
-      steering: clampAxis(next.steering),
-      handbrake: clamp01(next.handbrake),
-      shiftUp: next.shiftUp,
-      shiftDown: next.shiftDown
-    };
+    state = { throttle: clamp01(next.throttle), brake: clamp01(next.brake), clutch: clamp01(next.clutch), steering: clampAxis(next.steering), handbrake: clamp01(next.handbrake), shiftUp: next.shiftUp, shiftDown: next.shiftDown };
     listener(state);
   };
 
@@ -75,15 +51,7 @@ export function createInputController(listener: Listener): InputController {
   const keyboardLoop = () => {
     if (disposed || hidDevice) return;
     const target = keyboardTarget();
-    publish({
-      throttle: smoothAxis(state.throttle, target.throttle, 0.16),
-      brake: smoothAxis(state.brake, target.brake, 0.22),
-      clutch: smoothAxis(state.clutch, target.clutch, 0.24),
-      steering: smoothAxis(state.steering, target.steering, target.steering === 0 ? 0.2 : 0.14),
-      handbrake: target.handbrake,
-      shiftUp: target.shiftUp,
-      shiftDown: target.shiftDown
-    });
+    publish({ throttle: smoothAxis(state.throttle, target.throttle, 0.16), brake: smoothAxis(state.brake, target.brake, 0.22), clutch: smoothAxis(state.clutch, target.clutch, 0.24), steering: smoothAxis(state.steering, target.steering, target.steering === 0 ? 0.2 : 0.14), handbrake: target.handbrake, shiftUp: target.shiftUp, shiftDown: target.shiftDown });
     animationFrame = window.requestAnimationFrame(keyboardLoop);
   };
 
@@ -91,9 +59,7 @@ export function createInputController(listener: Listener): InputController {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
     keys.add(event.code);
   };
-  const onKeyUp = (event: KeyboardEvent) => {
-    keys.delete(event.code);
-  };
+  const onKeyUp = (event: KeyboardEvent) => { keys.delete(event.code); };
 
   window.addEventListener('keydown', onKeyDown, { passive: false });
   window.addEventListener('keyup', onKeyUp);
@@ -102,8 +68,9 @@ export function createInputController(listener: Listener): InputController {
   return {
     getState: () => state,
     async connectHidDevice(): Promise<string> {
-      if (!('hid' in navigator)) return 'WebHID is not available in this browser.';
-      const devices = await navigator.hid.requestDevice({ filters: [{ usagePage: 0x01, usage: 0x04 }, { usagePage: 0x01, usage: 0x05 }] });
+      const hid = navigator.hid;
+      if (!hid) return 'WebHID is not available in this browser.';
+      const devices = await hid.requestDevice({ filters: [{ usagePage: 0x01, usage: 0x04 }, { usagePage: 0x01, usage: 0x05 }] });
       const selected = devices[0];
       if (!selected) return 'No HID device selected.';
       hidDevice = selected;
