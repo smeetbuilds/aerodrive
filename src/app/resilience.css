@@ -96,11 +96,200 @@
   backdrop-filter: blur(14px);
 }
 
+.mobile-controls {
+  display: none;
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 900px) {
+  .mobile-controls {
+    position: fixed;
+    inset: auto 0 max(0.75rem, env(safe-area-inset-bottom)) 0;
+    z-index: 8;
+    display: grid;
+    grid-template-columns: minmax(9rem, 44vw) minmax(9rem, 44vw);
+    gap: 0.75rem;
+    align-items: end;
+    justify-content: space-between;
+    padding: 0 0.85rem;
+    pointer-events: none;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .mobile-controls button,
+  .mobile-wheel-pad {
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-steering-zone,
+  .mobile-pedal-zone {
+    display: grid;
+    gap: 0.5rem;
+    align-items: end;
+  }
+
+  .mobile-wheel-pad {
+    height: clamp(6rem, 23vw, 9.5rem);
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 1.4rem;
+    background: rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
+  }
+
+  .mobile-wheel {
+    width: clamp(4.6rem, 18vw, 7.2rem);
+    height: clamp(4.6rem, 18vw, 7.2rem);
+    border: 0.42rem solid rgba(215, 247, 255, 0.42);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: transform 90ms linear;
+    box-shadow: inset 0 0 30px rgba(215, 247, 255, 0.08), 0 10px 36px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-wheel span {
+    width: 18%;
+    height: 52%;
+    border-radius: 999px;
+    background: rgba(215, 247, 255, 0.48);
+  }
+
+  .mobile-pedal-zone {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mobile-pedal,
+  .mobile-small-button,
+  .mobile-gear-row button {
+    appearance: none;
+    min-height: 3.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.2rem;
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(16px);
+    font: 0.78rem/1 var(--font-data, ui-monospace, monospace);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobile-pedal {
+    min-height: clamp(5.8rem, 20vw, 8rem);
+  }
+
+  .mobile-pedal.throttle {
+    background: linear-gradient(180deg, rgba(215, 247, 255, 0.18), rgba(0, 0, 0, 0.38));
+  }
+
+  .mobile-pedal.brake {
+    background: linear-gradient(180deg, rgba(255, 156, 143, 0.2), rgba(0, 0, 0, 0.38));
+  }
+
+  .mobile-small-button.handbrake {
+    grid-column: 1 / -1;
+  }
+
+  .mobile-gear-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .mobile-small-button[aria-pressed='true'] {
+    border-color: rgba(215, 247, 255, 0.5);
+    background: rgba(215, 247, 255, 0.14);
+  }
+
+  .mobile-controls button:active,
+  .mobile-wheel-pad:active {
+    transform: translateY(1px) scale(0.99);
+    border-color: rgba(255, 255, 255, 0.34);
+  }
+
+  .hud {
+    bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 9.8rem);
+  }
+
+  .hud.zen {
+    opacity: 0.92;
+  }
+
+  .zenith-shell::before {
+    content: 'Mobile: hold pedals · drag wheel · tap Tilt for accelerometer';
+    top: 4.8rem;
+    max-width: calc(100vw - 2rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 @media (max-width: 760px) {
   .zenith-shell::before {
     top: 4.8rem;
     max-width: calc(100vw - 2rem);
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 540px) {
+  .topbar h1 {
+    font-size: 1.36rem;
+  }
+
+  .topbar .eyebrow {
+    font-size: 0.58rem;
+  }
+
+  .settings-button {
+    padding: 0.68rem 0.8rem;
+    min-height: 2.35rem;
+  }
+
+  .mobile-controls {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    padding: 0 0.65rem;
+  }
+
+  .mobile-pedal,
+  .mobile-small-button,
+  .mobile-gear-row button {
+    border-radius: 1rem;
+    font-size: 0.68rem;
+  }
+
+  .hud {
+    bottom: calc(max(0.65rem, env(safe-area-inset-bottom)) + 8.6rem);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .mobile-controls {
+    grid-template-columns: minmax(10rem, 34vw) minmax(12rem, 34vw);
+    inset: auto 0 max(0.45rem, env(safe-area-inset-bottom)) 0;
+  }
+
+  .mobile-wheel-pad {
+    height: 5.2rem;
+  }
+
+  .mobile-pedal {
+    min-height: 4.8rem;
+  }
+
+  .hud {
+    bottom: max(0.65rem, env(safe-area-inset-bottom));
+    transform: translateX(-50%) scale(0.78);
+    transform-origin: bottom center;
+  }
+
+  .zenith-shell::before {
+    display: none;
   }
 }
