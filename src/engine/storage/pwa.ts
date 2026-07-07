@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'aerodrive-zenith-v0.3.5';
+const CACHE_VERSION = 'aerodrive-zenith-v0.3.6';
 const REQUIRED_OFFLINE_ASSETS = ['/', '/manifest.webmanifest', '/wasm/zenith_physics.wasm'];
 
 export async function registerServiceWorker(onStatus?: (message: string) => void): Promise<void> {
@@ -9,7 +9,7 @@ export async function registerServiceWorker(onStatus?: (message: string) => void
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     onStatus?.(`Offline worker registered: ${registration.scope}`);
-    registration.update().catch(() => undefined);
+    void registration.update();
   } catch (error) {
     onStatus?.(`Offline worker registration failed: ${(error as Error).message}`);
   }
