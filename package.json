@@ -1,6 +1,6 @@
 {
   "name": "aerodrive-zenith",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "Vercel-ready offline-first browser-native driving simulator milestone for AeroDrive Zenith.",
   "scripts": {
@@ -22,7 +22,7 @@
     "@types/node": "24.10.3",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "typescript": "6.0.0-dev.20260707"
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": "20.x"
