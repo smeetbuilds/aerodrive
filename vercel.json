@@ -1,6 +1,5 @@
 {
   "buildCommand": "npm run check && npm run build",
-  "outputDirectory": "out",
   "installCommand": "npm install",
   "framework": "nextjs",
   "headers": [
