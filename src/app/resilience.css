@@ -65,3 +65,42 @@
   0%, 100% { transform: scale(0.96); opacity: 0.58; }
   50% { transform: scale(1.06); opacity: 1; }
 }
+
+.hud.zen {
+  opacity: 0.84;
+  transform: translateX(-50%);
+}
+
+.hud.zen .speed,
+.hud.zen .gear,
+.hud.zen .unit {
+  filter: drop-shadow(0 18px 42px rgba(0, 0, 0, 0.7));
+}
+
+.zenith-shell::before {
+  content: 'Drive: W/A/S/D or Arrow Keys · Settings: HUD / Weather / Graphics';
+  position: absolute;
+  left: 50%;
+  top: clamp(5rem, 10vw, 7.4rem);
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: 0.62rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.24);
+  color: rgba(255, 255, 255, 0.66);
+  font: 0.72rem/1.2 var(--font-data, ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  white-space: nowrap;
+  backdrop-filter: blur(14px);
+}
+
+@media (max-width: 760px) {
+  .zenith-shell::before {
+    top: 4.8rem;
+    max-width: calc(100vw - 2rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
