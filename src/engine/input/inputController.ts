@@ -25,6 +25,12 @@ function clamp01(value: number): number { return Math.max(0, Math.min(1, value))
 function clampAxis(value: number): number { return Math.max(-1, Math.min(1, value)); }
 function smoothAxis(current: number, target: number, speed: number): number { return current + (target - current) * speed; }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
 export function createInputController(listener: Listener): InputController {
   const keys = new Set<string>();
   let state = { ...initialState };
@@ -88,7 +94,7 @@ export function createInputController(listener: Listener): InputController {
       if (!hidDevice || !hidProfile?.buildForceFeedbackReport || !('sendReport' in hidDevice)) return;
       const report = hidProfile.buildForceFeedbackReport(feedback);
       if (!report) return;
-      await hidDevice.sendReport(report.reportId, report.payload).catch(() => undefined);
+      await hidDevice.sendReport(report.reportId, toArrayBuffer(report.payload)).catch(() => undefined);
     },
     dispose() {
       disposed = true;
