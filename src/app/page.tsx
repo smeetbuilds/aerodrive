@@ -87,6 +87,7 @@ export default function ZenithPage() {
     offlineReady,
     approximateMemoryMb: renderStats.approximateVramMb
   });
+  const shellHealth = hasStarted ? health : 'warning';
 
   const appendBoot = useCallback((line: string) => {
     setBootLog((current) => [...current.slice(-8), line]);
@@ -259,7 +260,7 @@ export default function ZenithPage() {
   };
 
   return (
-    <main className="zenith-shell" data-health={health}>
+    <main className="zenith-shell" data-health={shellHealth}>
       <canvas ref={canvasRef} className="zenith-canvas" aria-label="AeroDrive Zenith driving simulation canvas" />
 
       <div className="topbar" aria-label="Application controls">
@@ -272,23 +273,27 @@ export default function ZenithPage() {
         </button>
       </div>
 
-      <TelemetryHud
-        mode={settings.hudMode as HudMode}
-        telemetry={telemetry}
-        renderStats={renderStats}
-        isSettingsOpen={isSettingsOpen}
-      />
+      {hasStarted ? (
+        <>
+          <TelemetryHud
+            mode={settings.hudMode as HudMode}
+            telemetry={telemetry}
+            renderStats={renderStats}
+            isSettingsOpen={isSettingsOpen}
+          />
 
-      <BootPanel
-        seedLabel={seedLabel}
-        webGpuReady={webGpuReady}
-        renderStats={renderStats}
-        bootLog={bootLog}
-        offlineReady={offlineReady}
-        storageLine={storageLine}
-        health={health}
-        telemetry={telemetry}
-      />
+          <BootPanel
+            seedLabel={seedLabel}
+            webGpuReady={webGpuReady}
+            renderStats={renderStats}
+            bootLog={bootLog}
+            offlineReady={offlineReady}
+            storageLine={storageLine}
+            health={health}
+            telemetry={telemetry}
+          />
+        </>
+      ) : null}
 
       {isSettingsOpen ? (
         <SettingsPanel
