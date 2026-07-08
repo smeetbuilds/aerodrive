@@ -30,6 +30,10 @@ function publishMobileInput(input: MobileInputState) {
   window.dispatchEvent(new CustomEvent<MobileInputState>('aerodrive:mobile-input', { detail: input }));
 }
 
+function vibrate(pattern: number | number[]) {
+  if ('vibrate' in navigator) navigator.vibrate(pattern);
+}
+
 export function MobileControls() {
   const [isGameShellReady, setGameShellReady] = useState(false);
   const [tiltState, setTiltState] = useState<OrientationPermissionState>('unsupported');
@@ -55,6 +59,24 @@ export function MobileControls() {
   }, [control, isGameShellReady]);
 
   useEffect(() => {
+    const resetTransientInput = () => {
+      activeSteeringPointer.current = null;
+      setControl((current) => ({ ...neutralControl, steering: tiltState === 'enabled' ? current.steering : 0 }));
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) resetTransientInput();
+    };
+    window.addEventListener('blur', resetTransientInput);
+    window.addEventListener('pagehide', resetTransientInput);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('blur', resetTransientInput);
+      window.removeEventListener('pagehide', resetTransientInput);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [tiltState]);
+
+  useEffect(() => {
     if (tiltState !== 'enabled') return;
     const onOrientation = (event: DeviceOrientationEvent) => {
       const gamma = event.gamma ?? 0;
@@ -65,6 +87,7 @@ export function MobileControls() {
   }, [tiltState]);
 
   const setAxis = useCallback((axis: keyof Pick<ControlState, 'throttle' | 'brake' | 'clutch' | 'handbrake'>, value: number) => {
+    vibrate(axis === 'brake' ? 18 : 10);
     setControl((current) => ({ ...current, [axis]: clamp(value, 0, 1), active: true }));
   }, []);
 
@@ -81,11 +104,18 @@ export function MobileControls() {
   }, []);
 
   const pulseShift = useCallback((direction: 'up' | 'down') => {
+    vibrate([8, 12, 8]);
     setControl((current) => ({ ...current, shiftUp: direction === 'up', shiftDown: direction === 'down', active: true }));
     window.setTimeout(() => setControl((current) => ({ ...current, shiftUp: false, shiftDown: false })), 120);
   }, []);
 
-  const enableTilt = useCallback(async () => {
+  const toggleTilt = useCallback(async () => {
+    if (tiltState === 'enabled') {
+      setTiltState('available');
+      setControl((current) => ({ ...current, steering: 0 }));
+      vibrate(8);
+      return;
+    }
     if (!('DeviceOrientationEvent' in window)) {
       setTiltState('unsupported');
       return;
@@ -94,10 +124,17 @@ export function MobileControls() {
     if (typeof requestPermission === 'function') {
       const result = await requestPermission().catch(() => 'denied' as const);
       setTiltState(result === 'granted' ? 'enabled' : 'denied');
+      if (result === 'granted') vibrate(12);
       return;
     }
     setTiltState('enabled');
-  }, []);
+    vibrate(12);
+  }, [tiltState]);
+
+  const captureAndSetAxis = useCallback((event: React.PointerEvent<HTMLButtonElement>, axis: keyof Pick<ControlState, 'throttle' | 'brake' | 'clutch' | 'handbrake'>, value: number) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setAxis(axis, value);
+  }, [setAxis]);
 
   const steeringRotation = useMemo(() => `${Math.round(control.steering * 62)}deg`, [control.steering]);
 
@@ -106,8 +143,8 @@ export function MobileControls() {
   return (
     <aside className="mobile-controls" aria-label="Mobile driving controls">
       <div className="mobile-steering-zone">
-        <button className="mobile-small-button" type="button" onClick={enableTilt} aria-pressed={tiltState === 'enabled'}>
-          {tiltState === 'enabled' ? 'Tilt On' : 'Tilt'}
+        <button className="mobile-small-button" type="button" onClick={toggleTilt} aria-pressed={tiltState === 'enabled'} aria-label={`Tilt steering ${tiltState}`}>
+          {tiltState === 'enabled' ? 'Tilt On' : tiltState === 'denied' ? 'Tilt Denied' : 'Tilt'}
         </button>
         <div
           ref={steeringPadRef}
@@ -120,6 +157,7 @@ export function MobileControls() {
           onPointerDown={(event) => {
             activeSteeringPointer.current = event.pointerId;
             event.currentTarget.setPointerCapture(event.pointerId);
+            vibrate(8);
             updateSteeringFromPointer(event.clientX);
           }}
           onPointerMove={(event) => {
@@ -141,19 +179,19 @@ export function MobileControls() {
           </div>
         </div>
         <div className="mobile-gear-row">
-          <button type="button" onClick={() => pulseShift('down')}>− Gear</button>
-          <button type="button" onClick={() => pulseShift('up')}>+ Gear</button>
+          <button type="button" onClick={() => pulseShift('down')} aria-label="Shift down">− Gear</button>
+          <button type="button" onClick={() => pulseShift('up')} aria-label="Shift up">+ Gear</button>
         </div>
       </div>
 
       <div className="mobile-pedal-zone">
-        <button className="mobile-pedal brake" type="button" onPointerDown={() => setAxis('brake', 1)} onPointerUp={() => releaseAxis('brake')} onPointerCancel={() => releaseAxis('brake')} onPointerLeave={() => releaseAxis('brake')}>
+        <button className="mobile-pedal brake" type="button" onPointerDown={(event) => captureAndSetAxis(event, 'brake', 1)} onPointerUp={() => releaseAxis('brake')} onPointerCancel={() => releaseAxis('brake')} onPointerLeave={() => releaseAxis('brake')}>
           Brake
         </button>
-        <button className="mobile-pedal throttle" type="button" onPointerDown={() => setAxis('throttle', 1)} onPointerUp={() => releaseAxis('throttle')} onPointerCancel={() => releaseAxis('throttle')} onPointerLeave={() => releaseAxis('throttle')}>
+        <button className="mobile-pedal throttle" type="button" onPointerDown={(event) => captureAndSetAxis(event, 'throttle', 1)} onPointerUp={() => releaseAxis('throttle')} onPointerCancel={() => releaseAxis('throttle')} onPointerLeave={() => releaseAxis('throttle')}>
           Accelerate
         </button>
-        <button className="mobile-small-button handbrake" type="button" onPointerDown={() => setAxis('handbrake', 1)} onPointerUp={() => releaseAxis('handbrake')} onPointerCancel={() => releaseAxis('handbrake')}>
+        <button className="mobile-small-button handbrake" type="button" onPointerDown={(event) => captureAndSetAxis(event, 'handbrake', 1)} onPointerUp={() => releaseAxis('handbrake')} onPointerCancel={() => releaseAxis('handbrake')}>
           Handbrake
         </button>
       </div>
