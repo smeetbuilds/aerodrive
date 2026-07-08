@@ -96,17 +96,24 @@ export default function ZenithPage() {
     const syncDeviceState = () => {
       const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
       const narrowScreen = window.matchMedia('(max-width: 900px)').matches;
-      setIsMobileLike(coarsePointer || narrowScreen);
-      setIsLandscape(window.innerWidth >= window.innerHeight);
+      const hasTouch = navigator.maxTouchPoints > 0;
+      const orientationType = screen.orientation?.type;
+      const landscapeByApi = typeof orientationType === 'string' ? orientationType.includes('landscape') : false;
+      const landscapeByViewport = window.innerWidth >= window.innerHeight;
+
+      setIsMobileLike(coarsePointer || hasTouch || narrowScreen);
+      setIsLandscape(landscapeByApi || landscapeByViewport);
     };
 
     syncDeviceState();
     window.addEventListener('resize', syncDeviceState);
     window.addEventListener('orientationchange', syncDeviceState);
+    screen.orientation?.addEventListener?.('change', syncDeviceState);
 
     return () => {
       window.removeEventListener('resize', syncDeviceState);
       window.removeEventListener('orientationchange', syncDeviceState);
+      screen.orientation?.removeEventListener?.('change', syncDeviceState);
     };
   }, []);
 
@@ -146,7 +153,7 @@ export default function ZenithPage() {
           weather: settings.weather
         });
         setWebGpuReady(rendererRef.current.mode === 'webgpu');
-        appendBoot(rendererRef.current.mode === 'webgpu' ? 'WebGPU renderer online.' : 'Canvas fallback renderer online.');
+        appendBoot(rendererRef.current.mode === 'webgpu' ? 'WebGPU renderer online.' : 'Canvas gameplay renderer online.');
       } catch (error) {
         appendBoot(`Renderer boot failed: ${(error as Error).message}`);
       }
@@ -291,7 +298,22 @@ export default function ZenithPage() {
         />
       ) : null}
 
-      {!hasStarted ? (
+      {!hasStarted && orientationBlocked ? (
+        <section className="startup-overlay startup-overlay-portrait" aria-label="Rotate device before launch">
+          <div className="startup-backdrop" />
+          <div className="orientation-card startup-rotate-card">
+            <div className="orientation-phone animated-phone" aria-hidden="true"><span /></div>
+            <p className="orientation-eyebrow">Landscape required</p>
+            <h3>Turn your phone sideways to start</h3>
+            <p>AeroDrive Zenith uses a wide cockpit, pedals, steering, and telemetry layout. Rotate to landscape, then the Play button unlocks.</p>
+            <button className="ghost-button" type="button" onClick={() => setSettingsOpen(true)}>
+              Open Settings
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {!hasStarted && !orientationBlocked ? (
         <section className="startup-overlay" aria-label="Game launch screen">
           <div className="startup-backdrop" />
           <div className="startup-card">
@@ -303,15 +325,15 @@ export default function ZenithPage() {
             </p>
 
             <div className="startup-highlights">
-              <div><span>Render</span><strong>{webGpuReady ? 'WebGPU Ready' : 'Boot-safe Canvas'}</strong></div>
+              <div><span>Render</span><strong>Ready on Play</strong></div>
               <div><span>Seed</span><strong>{seedLabel}</strong></div>
               <div><span>Offline</span><strong>{offlineReady ? 'Primed' : 'Checking'}</strong></div>
             </div>
 
             <div className="startup-cta-group">
-              <button className="play-button" type="button" onClick={() => void startExperience()} disabled={orientationBlocked}>
+              <button className="play-button" type="button" onClick={() => void startExperience()}>
                 <span className="play-icon" aria-hidden="true">▶</span>
-                <span>{orientationBlocked ? 'Rotate to Landscape' : 'Play Now'}</span>
+                <span>Play Now</span>
               </button>
               <button className="ghost-button" type="button" onClick={() => setSettingsOpen(true)}>
                 Open Settings
@@ -335,7 +357,7 @@ export default function ZenithPage() {
       {hasStarted && orientationBlocked ? (
         <section className="orientation-overlay" aria-label="Landscape required notice">
           <div className="orientation-card">
-            <div className="orientation-phone" aria-hidden="true"><span /></div>
+            <div className="orientation-phone animated-phone" aria-hidden="true"><span /></div>
             <p className="orientation-eyebrow">Landscape required</p>
             <h3>Rotate your device to continue driving</h3>
             <p>AeroDrive Zenith uses a wide cockpit layout on mobile. Turn your phone sideways, then continue the experience.</p>
