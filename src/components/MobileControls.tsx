@@ -36,16 +36,19 @@ function vibrate(pattern: number | number[]) {
 }
 
 export function MobileControls() {
-  const [isGameShellReady, setGameShellReady] = useState(false);
+  const [isGameShellStarted, setGameShellStarted] = useState(false);
   const [tiltState, setTiltState] = useState<OrientationPermissionState>('unsupported');
   const [control, setControl] = useState<ControlState>(neutralControl);
   const steeringPadRef = useRef<HTMLDivElement | null>(null);
   const activeSteeringPointer = useRef<number | null>(null);
 
   useEffect(() => {
-    const detectShell = () => setGameShellReady(Boolean(document.querySelector('.zenith-shell')));
-    detectShell();
-    const timer = window.setInterval(detectShell, 800);
+    const detectShellState = () => {
+      const shell = document.querySelector<HTMLElement>('.zenith-shell');
+      setGameShellStarted(shell?.dataset.started === 'true');
+    };
+    detectShellState();
+    const timer = window.setInterval(detectShellState, 250);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -55,9 +58,12 @@ export function MobileControls() {
   }, []);
 
   useEffect(() => {
-    if (!isGameShellReady) return;
+    if (!isGameShellStarted) {
+      publishMobileInput({ ...neutralControl, active: false });
+      return;
+    }
     publishMobileInput(control);
-  }, [control, isGameShellReady]);
+  }, [control, isGameShellStarted]);
 
   useEffect(() => {
     const resetTransientInput = () => {
@@ -139,7 +145,7 @@ export function MobileControls() {
 
   const steeringRotation = useMemo(() => `${Math.round(control.steering * 62)}deg`, [control.steering]);
 
-  if (!isGameShellReady) return null;
+  if (!isGameShellStarted) return null;
 
   return (
     <aside className="mobile-controls" aria-label="Mobile driving controls">
