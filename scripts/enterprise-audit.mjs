@@ -16,7 +16,7 @@ const checks = [
   ['src/engine/terrain/proceduralRoad.ts', ['MAX_SEGMENT_CACHE_ENTRIES', 'getRoadSegmentCacheSize', 'sampleSurface', 'lerp']],
   ['src/engine/audio/audioEngine.ts', ['panningModel = \'HRTF\'', 'makeNoiseBuffer', 'surfaceRoughness']],
   ['src/engine/performance/budget.ts', ['PERFORMANCE_BUDGET', 'classifyRuntimeHealth']],
-  ['next.config.mjs', ['Content-Security-Policy', "connect-src 'self'", 'Permissions-Policy']],
+  ['next.config.mjs', ['Content-Security-Policy', "script-src 'self' 'unsafe-inline'", "connect-src 'self'", 'Permissions-Policy']],
   ['vercel.json', ['buildCommand', 'outputDirectory', 'Service-Worker-Allowed']],
   ['.github/workflows/ci.yml', ['npm run check', 'npm run build']]
 ];
