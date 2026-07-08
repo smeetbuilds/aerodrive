@@ -1,7 +1,6 @@
-const CACHE_VERSION = 'aerodrive-zenith-v0.3.14';
+const CACHE_VERSION = 'aerodrive-zenith-v0.3.15';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const CORE_ASSETS = [
-  '/',
   '/manifest.webmanifest',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -45,7 +44,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin || request.method !== 'GET') return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirstNavigation(request));
+    event.respondWith(networkOnlyNavigation(request));
     return;
   }
 
@@ -57,15 +56,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(staleWhileRevalidate(request));
 });
 
-async function networkFirstNavigation(request) {
-  const cache = await caches.open(CACHE_VERSION);
+async function networkOnlyNavigation(request) {
   try {
-    const response = await fetch(request);
-    if (response.ok) await cache.put('/', response.clone());
-    return response;
+    return await fetch(request, { cache: 'no-store' });
   } catch (_error) {
-    const cached = await cache.match(request) || await cache.match('/') || await caches.match('/');
-    return cached || new Response('AeroDrive Zenith is not cached yet. Load once while online.', {
+    return new Response('AeroDrive Zenith needs an online refresh to load the latest cockpit shell.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
