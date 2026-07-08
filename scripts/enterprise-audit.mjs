@@ -5,6 +5,8 @@ const checks = [
   ['src/engine/storage/indexedDb.ts', ['validateSettings', 'lap-times', 'peripheral-mappings', 'estimateLocalStorage']],
   ['src/engine/input/inputController.ts', ['MobileInputState', 'aerodrive:mobile-input', 'connectHidDevice', 'applyForceFeedback', 'usagePage', 'toArrayBuffer']],
   ['src/components/MobileControls.tsx', ['DeviceOrientationEvent', 'mobile-wheel-pad', 'Brake', 'Accelerate', 'Handbrake', 'Gear', 'visibilitychange', 'vibrate', 'Tilt Denied']],
+  ['src/app/page.tsx', ['hasStarted', 'orientationBlocked', 'lockLandscape', 'Play Now', 'Rotate to Landscape']],
+  ['src/app/startup.css', ['startup-overlay', 'orientation-overlay', 'play-button', 'orientation-phone']],
   ['src/engine/input/hidProfiles.ts', ['buildForceFeedbackReport', 'resolveHidProfile', 'Logitech-style']],
   ['src/engine/physics/vehicleModel.ts', ['pacejkaMagicFormula', 'COM_H', 'weatherGripMultiplier', 'PHYSICS_TICK_HZ']],
   ['src/engine/physics/wasmPhysicsBridge.ts', ['loadWasmPhysicsCore', 'zenith_physics.wasm', 'pacejkaMagicFormula']],
