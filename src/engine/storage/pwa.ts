@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'aerodrive-zenith-v0.3.12';
+const CACHE_VERSION = 'aerodrive-zenith-v0.3.13';
 const REQUIRED_OFFLINE_ASSETS = ['/', '/manifest.webmanifest', '/wasm/zenith_physics.wasm'];
 
 export async function registerServiceWorker(onStatus?: (message: string) => void): Promise<void> {
