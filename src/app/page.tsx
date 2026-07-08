@@ -67,14 +67,18 @@ export default function ZenithPage() {
   const [settings, setSettings] = useState<ZenithSettings>(DEFAULT_SETTINGS);
   const [telemetry, setTelemetry] = useState<PhysicsSnapshot>(initialTelemetry);
   const [renderStats, setRenderStats] = useState<RenderStats>(initialRenderStats);
-  const [bootLog, setBootLog] = useState<string[]>(['Booting local application shell...']);
+  const [bootLog, setBootLog] = useState<string[]>(['Preparing cockpit systems...']);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [webGpuReady, setWebGpuReady] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);
   const [storageLine, setStorageLine] = useState('IndexedDB pending');
+  const [hasStarted, setHasStarted] = useState(false);
+  const [isMobileLike, setIsMobileLike] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(true);
 
   const seed = useMemo(() => sanitizeSeed(settings.seed) || DEFAULT_SETTINGS.seed, [settings.seed]);
   const seedLabel = useMemo(() => seedToLabel(seed), [seed]);
+  const orientationBlocked = isMobileLike && !isLandscape;
   const health = classifyRuntimeHealth({
     fps: renderStats.fps,
     frameTimeMs: renderStats.frameTimeMs,
@@ -85,6 +89,24 @@ export default function ZenithPage() {
 
   const appendBoot = useCallback((line: string) => {
     setBootLog((current) => [...current.slice(-8), line]);
+  }, []);
+
+  useEffect(() => {
+    const syncDeviceState = () => {
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const narrowScreen = window.matchMedia('(max-width: 900px)').matches;
+      setIsMobileLike(coarsePointer || narrowScreen);
+      setIsLandscape(window.innerWidth >= window.innerHeight);
+    };
+
+    syncDeviceState();
+    window.addEventListener('resize', syncDeviceState);
+    window.addEventListener('orientationchange', syncDeviceState);
+
+    return () => {
+      window.removeEventListener('resize', syncDeviceState);
+      window.removeEventListener('orientationchange', syncDeviceState);
+    };
   }, []);
 
   useEffect(() => {
@@ -110,7 +132,7 @@ export default function ZenithPage() {
   }, [appendBoot]);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!hasStarted || orientationBlocked || !canvasRef.current) return;
 
     let isDisposed = false;
 
@@ -182,7 +204,7 @@ export default function ZenithPage() {
       inputRef.current?.dispose();
       audioRef.current?.dispose();
     };
-  }, [appendBoot, seed, settings.graphicsPreset, settings.weather]);
+  }, [appendBoot, hasStarted, orientationBlocked, seed, settings.graphicsPreset, settings.weather]);
 
   const updateSettings = async (next: Partial<ZenithSettings>) => {
     const merged = { ...settings, ...next };
@@ -196,6 +218,36 @@ export default function ZenithPage() {
     const result = await inputRef.current?.connectHidDevice();
     await updateSettings({ inputProfile: 'hid' });
     appendBoot(result ?? 'WebHID unavailable in this browser.');
+  };
+
+  const lockLandscape = async () => {
+    try {
+      const element = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+      if (document.fullscreenElement == null && element.requestFullscreen) {
+        await element.requestFullscreen();
+      } else if (document.fullscreenElement == null && element.webkitRequestFullscreen) {
+        await element.webkitRequestFullscreen();
+      }
+    } catch {
+      appendBoot('Fullscreen request skipped by browser policy.');
+    }
+
+    try {
+      const orientationApi = screen.orientation as ScreenOrientation & { lock?: (orientation: OrientationLockType) => Promise<void> };
+      if (orientationApi?.lock) {
+        await orientationApi.lock('landscape');
+        appendBoot('Landscape orientation requested.');
+      }
+    } catch {
+      appendBoot('Landscape lock not supported; manual rotate fallback active.');
+    }
+  };
+
+  const startExperience = async () => {
+    if (isMobileLike && !isLandscape) return;
+    await lockLandscape();
+    setHasStarted(true);
+    appendBoot('Pilot launch acknowledged. Starting simulation...');
   };
 
   return (
@@ -236,6 +288,61 @@ export default function ZenithPage() {
           onUpdate={updateSettings}
           onEnableHid={enableHid}
         />
+      ) : null}
+
+      {!hasStarted ? (
+        <section className="startup-overlay" aria-label="Game launch screen">
+          <div className="startup-backdrop" />
+          <div className="startup-card">
+            <div className="startup-badge">Cinematic Browser Driving Preview</div>
+            <p className="startup-kicker">Offline-first performance · deterministic terrain · local telemetry</p>
+            <h2>Start your AeroDrive Zenith run</h2>
+            <p className="startup-copy">
+              Enter a polished cockpit launch flow, tune the seed and weather, then drive a clean local-first road experience with desktop, mobile, and WebHID-ready controls.
+            </p>
+
+            <div className="startup-highlights">
+              <div><span>Render</span><strong>{webGpuReady ? 'WebGPU Ready' : 'Boot-safe Canvas'}</strong></div>
+              <div><span>Seed</span><strong>{seedLabel}</strong></div>
+              <div><span>Offline</span><strong>{offlineReady ? 'Primed' : 'Checking'}</strong></div>
+            </div>
+
+            <div className="startup-cta-group">
+              <button className="play-button" type="button" onClick={() => void startExperience()} disabled={orientationBlocked}>
+                <span className="play-icon" aria-hidden="true">▶</span>
+                <span>{orientationBlocked ? 'Rotate to Landscape' : 'Play Now'}</span>
+              </button>
+              <button className="ghost-button" type="button" onClick={() => setSettingsOpen(true)}>
+                Open Settings
+              </button>
+            </div>
+
+            <div className="startup-footer-grid">
+              <div>
+                <span>Controls</span>
+                <strong>W/A/S/D · Arrows · Touch · WebHID</strong>
+              </div>
+              <div>
+                <span>Mobile Rule</span>
+                <strong>{isMobileLike ? 'Landscape required to start' : 'Desktop free orientation'}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {hasStarted && orientationBlocked ? (
+        <section className="orientation-overlay" aria-label="Landscape required notice">
+          <div className="orientation-card">
+            <div className="orientation-phone" aria-hidden="true"><span /></div>
+            <p className="orientation-eyebrow">Landscape required</p>
+            <h3>Rotate your device to continue driving</h3>
+            <p>AeroDrive Zenith uses a wide cockpit layout on mobile. Turn your phone sideways, then continue the experience.</p>
+            <button className="play-button compact" type="button" onClick={() => void lockLandscape()}>
+              Try Landscape Lock Again
+            </button>
+          </div>
+        </section>
       ) : null}
     </main>
   );
