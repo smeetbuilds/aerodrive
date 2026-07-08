@@ -265,17 +265,38 @@ export default function ZenithPage() {
   const handleLaunchAction = useCallback((action: LaunchAction) => {
     if (action === 'settings') {
       setSettingsOpen(true);
+      window.history.replaceState(null, '', '#settings');
       return;
     }
 
     if (launchTapLockRef.current) return;
     launchTapLockRef.current = true;
+    window.history.replaceState(null, '', '?launch=1#drive');
     void startExperience().finally(() => {
       window.setTimeout(() => {
         launchTapLockRef.current = false;
       }, 280);
     });
   }, [startExperience]);
+
+  useEffect(() => {
+    const consumeUrlAction = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (window.location.hash === '#settings') setSettingsOpen(true);
+      if (params.get('launch') === '1' && !hasStarted && !orientationBlocked) {
+        void startExperience();
+      }
+    };
+
+    consumeUrlAction();
+    window.addEventListener('hashchange', consumeUrlAction);
+    window.addEventListener('popstate', consumeUrlAction);
+
+    return () => {
+      window.removeEventListener('hashchange', consumeUrlAction);
+      window.removeEventListener('popstate', consumeUrlAction);
+    };
+  }, [hasStarted, orientationBlocked, startExperience]);
 
   useEffect(() => {
     const handleNativeLaunchTap = (event: Event) => {
@@ -310,9 +331,9 @@ export default function ZenithPage() {
           <p className="eyebrow">Aahav Labs / Offline PWA</p>
           <h1>AeroDrive Zenith</h1>
         </div>
-        <button className="settings-button" type="button" onPointerUp={() => setSettingsOpen((value) => !value)} onClick={() => setSettingsOpen((value) => !value)}>
+        <a className="settings-button" href="#settings" role="button" onPointerUp={() => setSettingsOpen((value) => !value)} onClick={() => setSettingsOpen((value) => !value)}>
           {isSettingsOpen ? 'Close' : 'Settings'}
-        </button>
+        </a>
       </div>
 
       {hasStarted ? (
@@ -353,9 +374,9 @@ export default function ZenithPage() {
             <p className="orientation-eyebrow">Landscape required</p>
             <h3>Turn your phone sideways to start</h3>
             <p>AeroDrive Zenith uses a wide cockpit, pedals, steering, and telemetry layout. Rotate to landscape, then the Play button unlocks.</p>
-            <button className="ghost-button" type="button" data-launch-action="settings" onPointerUp={() => handleLaunchAction('settings')} onClick={() => handleLaunchAction('settings')}>
+            <a className="ghost-button" href="#settings" role="button" data-launch-action="settings" onPointerUp={() => handleLaunchAction('settings')} onClick={() => handleLaunchAction('settings')}>
               Open Settings
-            </button>
+            </a>
           </div>
         </section>
       ) : null}
@@ -378,13 +399,13 @@ export default function ZenithPage() {
             </div>
 
             <div className="startup-cta-group">
-              <button className="play-button" type="button" data-launch-action="play" onPointerUp={() => handleLaunchAction('play')} onClick={() => handleLaunchAction('play')}>
+              <a className="play-button" href="?launch=1#drive" role="button" data-launch-action="play" onPointerUp={() => handleLaunchAction('play')} onClick={() => handleLaunchAction('play')}>
                 <span className="play-icon" aria-hidden="true">▶</span>
                 <span>Play Now</span>
-              </button>
-              <button className="ghost-button" type="button" data-launch-action="settings" onPointerUp={() => handleLaunchAction('settings')} onClick={() => handleLaunchAction('settings')}>
+              </a>
+              <a className="ghost-button" href="#settings" role="button" data-launch-action="settings" onPointerUp={() => handleLaunchAction('settings')} onClick={() => handleLaunchAction('settings')}>
                 Open Settings
-              </button>
+              </a>
             </div>
 
             <div className="startup-footer-grid">
@@ -408,9 +429,9 @@ export default function ZenithPage() {
             <p className="orientation-eyebrow">Landscape required</p>
             <h3>Rotate your device to continue driving</h3>
             <p>AeroDrive Zenith uses a wide cockpit layout on mobile. Turn your phone sideways, then continue the experience.</p>
-            <button className="play-button compact" type="button" onPointerUp={() => void lockLandscape()} onClick={() => void lockLandscape()}>
+            <a className="play-button compact" href="#drive" role="button" onPointerUp={() => void lockLandscape()} onClick={() => void lockLandscape()}>
               Try Landscape Lock Again
-            </button>
+            </a>
           </div>
         </section>
       ) : null}
