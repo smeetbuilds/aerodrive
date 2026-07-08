@@ -53,6 +53,7 @@ const initialRenderStats: RenderStats = {
 };
 
 const blankInput: DriverInputState = { throttle: 0, brake: 0, clutch: 0, steering: 0, handbrake: 0, shiftUp: false, shiftDown: false };
+type ScreenOrientationLock = 'any' | 'natural' | 'landscape' | 'portrait' | 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary';
 
 export default function ZenithPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -233,7 +234,7 @@ export default function ZenithPage() {
     }
 
     try {
-      const orientationApi = screen.orientation as ScreenOrientation & { lock?: (orientation: OrientationLockType) => Promise<void> };
+      const orientationApi = screen.orientation as ScreenOrientation & { lock?: (orientation: ScreenOrientationLock) => Promise<void> };
       if (orientationApi?.lock) {
         await orientationApi.lock('landscape');
         appendBoot('Landscape orientation requested.');
