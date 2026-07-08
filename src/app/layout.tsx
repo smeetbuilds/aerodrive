@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { MobileControls } from '@/components/MobileControls';
 import './styles.css';
 import './resilience.css';
+import './startup.css';
 
 export const metadata: Metadata = {
   title: 'AeroDrive Zenith',
