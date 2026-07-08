@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'aerodrive-zenith-v0.3.10';
+const CACHE_VERSION = 'aerodrive-zenith-v0.3.11';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const CORE_ASSETS = [
   '/',
