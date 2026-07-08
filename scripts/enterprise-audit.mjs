@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 
 const checks = [
-  ['public/sw.js', ['CACHE_VERSION', 'networkFirstNavigation', 'trimCache', 'url.origin !== self.location.origin']],
+  ['public/sw.js', ['CACHE_VERSION', 'networkOnlyNavigation', "fetch(request, { cache: 'no-store' })", 'trimCache', 'url.origin !== self.location.origin']],
   ['src/engine/storage/indexedDb.ts', ['validateSettings', 'lap-times', 'peripheral-mappings', 'estimateLocalStorage']],
   ['src/engine/input/inputController.ts', ['MobileInputState', 'aerodrive:mobile-input', 'connectHidDevice', 'applyForceFeedback', 'usagePage', 'toArrayBuffer']],
   ['src/components/MobileControls.tsx', ['isGameShellStarted', "dataset.started === 'true'", 'active: false', 'DeviceOrientationEvent', 'mobile-wheel-pad', 'Brake', 'Accelerate', 'Handbrake', 'Gear', 'visibilitychange', 'vibrate', 'Tilt Denied']],
