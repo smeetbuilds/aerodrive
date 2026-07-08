@@ -55,6 +55,8 @@ const initialRenderStats: RenderStats = {
 const blankInput: DriverInputState = { throttle: 0, brake: 0, clutch: 0, steering: 0, handbrake: 0, shiftUp: false, shiftDown: false };
 type ScreenOrientationLock = 'any' | 'natural' | 'landscape' | 'portrait' | 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary';
 
+type LaunchAction = 'play' | 'settings';
+
 export default function ZenithPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<RendererHandle | null>(null);
@@ -64,6 +66,7 @@ export default function ZenithPage() {
   const rafRef = useRef<number | null>(null);
   const lastPhysicsRef = useRef<PhysicsSnapshot>(initialTelemetry);
   const lastInputRef = useRef<DriverInputState>(blankInput);
+  const launchTapLockRef = useRef(false);
 
   const [settings, setSettings] = useState<ZenithSettings>(DEFAULT_SETTINGS);
   const [telemetry, setTelemetry] = useState<PhysicsSnapshot>(initialTelemetry);
@@ -229,7 +232,7 @@ export default function ZenithPage() {
     appendBoot(result ?? 'WebHID unavailable in this browser.');
   };
 
-  const lockLandscape = async () => {
+  const lockLandscape = useCallback(async () => {
     try {
       const element = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
       if (document.fullscreenElement == null && element.requestFullscreen) {
@@ -250,14 +253,53 @@ export default function ZenithPage() {
     } catch {
       appendBoot('Landscape lock not supported; manual rotate fallback active.');
     }
-  };
+  }, [appendBoot]);
 
-  const startExperience = async () => {
+  const startExperience = useCallback(async () => {
     if (isMobileLike && !isLandscape) return;
     await lockLandscape();
     setHasStarted(true);
     appendBoot('Pilot launch acknowledged. Starting simulation...');
-  };
+  }, [appendBoot, isLandscape, isMobileLike, lockLandscape]);
+
+  const handleLaunchAction = useCallback((action: LaunchAction) => {
+    if (action === 'settings') {
+      setSettingsOpen(true);
+      return;
+    }
+
+    if (launchTapLockRef.current) return;
+    launchTapLockRef.current = true;
+    void startExperience().finally(() => {
+      window.setTimeout(() => {
+        launchTapLockRef.current = false;
+      }, 280);
+    });
+  }, [startExperience]);
+
+  useEffect(() => {
+    const handleNativeLaunchTap = (event: Event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const launcher = target?.closest<HTMLElement>('[data-launch-action]');
+      const action = launcher?.dataset.launchAction as LaunchAction | undefined;
+      if (!action) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      handleLaunchAction(action);
+    };
+
+    const options: AddEventListenerOptions = { capture: true };
+    document.addEventListener('pointerup', handleNativeLaunchTap, options);
+    document.addEventListener('touchend', handleNativeLaunchTap, options);
+    document.addEventListener('click', handleNativeLaunchTap, options);
+
+    return () => {
+      document.removeEventListener('pointerup', handleNativeLaunchTap, options);
+      document.removeEventListener('touchend', handleNativeLaunchTap, options);
+      document.removeEventListener('click', handleNativeLaunchTap, options);
+    };
+  }, [handleLaunchAction]);
 
   return (
     <main className="zenith-shell" data-health={shellHealth} data-started={hasStarted ? 'true' : 'false'}>
@@ -268,7 +310,7 @@ export default function ZenithPage() {
           <p className="eyebrow">Aahav Labs / Offline PWA</p>
           <h1>AeroDrive Zenith</h1>
         </div>
-        <button className="settings-button" type="button" onClick={() => setSettingsOpen((value) => !value)}>
+        <button className="settings-button" type="button" onPointerUp={() => setSettingsOpen((value) => !value)} onClick={() => setSettingsOpen((value) => !value)}>
           {isSettingsOpen ? 'Close' : 'Settings'}
         </button>
       </div>
@@ -311,7 +353,7 @@ export default function ZenithPage() {
             <p className="orientation-eyebrow">Landscape required</p>
             <h3>Turn your phone sideways to start</h3>
             <p>AeroDrive Zenith uses a wide cockpit, pedals, steering, and telemetry layout. Rotate to landscape, then the Play button unlocks.</p>
-            <button className="ghost-button" type="button" onClick={() => setSettingsOpen(true)}>
+            <button className="ghost-button" type="button" data-launch-action="settings" onPointerUp={() => handleLaunchAction('settings')} onClick={() => handleLaunchAction('settings')}>
               Open Settings
             </button>
           </div>
@@ -336,11 +378,11 @@ export default function ZenithPage() {
             </div>
 
             <div className="startup-cta-group">
-              <button className="play-button" type="button" onClick={() => void startExperience()}>
+              <button className="play-button" type="button" data-launch-action="play" onPointerUp={() => handleLaunchAction('play')} onClick={() => handleLaunchAction('play')}>
                 <span className="play-icon" aria-hidden="true">▶</span>
                 <span>Play Now</span>
               </button>
-              <button className="ghost-button" type="button" onClick={() => setSettingsOpen(true)}>
+              <button className="ghost-button" type="button" data-launch-action="settings" onPointerUp={() => handleLaunchAction('settings')} onClick={() => handleLaunchAction('settings')}>
                 Open Settings
               </button>
             </div>
@@ -366,7 +408,7 @@ export default function ZenithPage() {
             <p className="orientation-eyebrow">Landscape required</p>
             <h3>Rotate your device to continue driving</h3>
             <p>AeroDrive Zenith uses a wide cockpit layout on mobile. Turn your phone sideways, then continue the experience.</p>
-            <button className="play-button compact" type="button" onClick={() => void lockLandscape()}>
+            <button className="play-button compact" type="button" onPointerUp={() => void lockLandscape()} onClick={() => void lockLandscape()}>
               Try Landscape Lock Again
             </button>
           </div>
