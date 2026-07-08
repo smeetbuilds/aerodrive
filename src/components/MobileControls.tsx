@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEvent } from 'react';
 import type { MobileInputState } from '@/engine/input/inputController';
 
 type OrientationPermissionState = 'unsupported' | 'available' | 'enabled' | 'denied';
@@ -131,7 +132,7 @@ export function MobileControls() {
     vibrate(12);
   }, [tiltState]);
 
-  const captureAndSetAxis = useCallback((event: React.PointerEvent<HTMLButtonElement>, axis: keyof Pick<ControlState, 'throttle' | 'brake' | 'clutch' | 'handbrake'>, value: number) => {
+  const captureAndSetAxis = useCallback((event: PointerEvent<HTMLButtonElement>, axis: keyof Pick<ControlState, 'throttle' | 'brake' | 'clutch' | 'handbrake'>, value: number) => {
     event.currentTarget.setPointerCapture(event.pointerId);
     setAxis(axis, value);
   }, [setAxis]);
