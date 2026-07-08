@@ -5,7 +5,7 @@ const checks = [
   ['src/engine/storage/indexedDb.ts', ['validateSettings', 'lap-times', 'peripheral-mappings', 'estimateLocalStorage']],
   ['src/engine/input/inputController.ts', ['MobileInputState', 'aerodrive:mobile-input', 'connectHidDevice', 'applyForceFeedback', 'usagePage', 'toArrayBuffer']],
   ['src/components/MobileControls.tsx', ['isGameShellStarted', "dataset.started === 'true'", 'active: false', 'DeviceOrientationEvent', 'mobile-wheel-pad', 'Brake', 'Accelerate', 'Handbrake', 'Gear', 'visibilitychange', 'vibrate', 'Tilt Denied']],
-  ['src/app/page.tsx', ['data-started', 'hasStarted', 'shellHealth', 'orientationBlocked', 'lockLandscape', 'Play Now', 'Ready on Play', 'startup-overlay-portrait', 'Turn your phone sideways to start', 'hasStarted ? (']],
+  ['src/app/page.tsx', ['data-started', 'data-launch-action', 'handleNativeLaunchTap', 'pointerup', 'touchend', 'hasStarted', 'shellHealth', 'orientationBlocked', 'lockLandscape', 'Play Now', 'Ready on Play', 'startup-overlay-portrait', 'Turn your phone sideways to start', 'hasStarted ? (']],
   ['src/app/startup.css', ['z-index: 60', 'z-index: 80', 'startup-overlay', 'orientation-overlay', 'play-button', 'orientation-phone', 'pointer-events: none', 'animated-phone', 'phone-orientation-hint', 'touch-action: manipulation']],
   ['src/engine/input/hidProfiles.ts', ['buildForceFeedbackReport', 'resolveHidProfile', 'Logitech-style']],
   ['src/engine/physics/vehicleModel.ts', ['pacejkaMagicFormula', 'COM_H', 'weatherGripMultiplier', 'PHYSICS_TICK_HZ']],
