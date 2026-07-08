@@ -260,7 +260,7 @@ export default function ZenithPage() {
   };
 
   return (
-    <main className="zenith-shell" data-health={shellHealth}>
+    <main className="zenith-shell" data-health={shellHealth} data-started={hasStarted ? 'true' : 'false'}>
       <canvas ref={canvasRef} className="zenith-canvas" aria-label="AeroDrive Zenith driving simulation canvas" />
 
       <div className="topbar" aria-label="Application controls">
