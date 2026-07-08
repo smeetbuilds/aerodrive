@@ -220,6 +220,10 @@
   margin-top: 1.25rem;
 }
 
+.panel {
+  z-index: 12;
+}
+
 @media (max-width: 760px) {
   .startup-card,
   .orientation-card {
